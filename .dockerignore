@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+.cursor
+.vscode
+dist
+*.log
+.env
+.env.*
+state.json
+data

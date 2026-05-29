@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+
+data/
+state.json
+
+node_modules/
+bun.lockb
+*.log
