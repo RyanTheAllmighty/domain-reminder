@@ -18,6 +18,7 @@ import { formatExpiryReminder, formatStartupSummary } from "./messages";
 
 async function checkDomains(opts: {
   domains: string[];
+  expiryOverrides: Record<string, Date>;
   log: Logger;
   shouldStop: () => boolean;
 }): Promise<DomainCheckResult[]> {
@@ -27,7 +28,7 @@ async function checkDomains(opts: {
     if (opts.shouldStop()) break;
 
     opts.log.info("Checking domain.", { domain });
-    const result = await checkDomain(domain);
+    const result = await checkDomain(domain, opts.expiryOverrides);
     results.push(result);
 
     if (isDomainLookupResult(result)) {
@@ -163,6 +164,7 @@ export async function runDomainReminder(opts: {
   const startupNow = new Date();
   const startupResults = await checkDomains({
     domains: config.domains,
+    expiryOverrides: config.expiryOverrides,
     log,
     shouldStop,
   });
@@ -197,6 +199,7 @@ export async function runDomainReminder(opts: {
 
     const results = await checkDomains({
       domains: config.domains,
+      expiryOverrides: config.expiryOverrides,
       log,
       shouldStop,
     });

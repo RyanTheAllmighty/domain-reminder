@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { extractWhoisExpiryDate, parseWhoisFields } from "../src/domain/dates";
+import { extractReferralServer } from "../src/domain/whois";
 
 describe("WHOIS parsing", () => {
   test("parses common expiry fields", () => {
@@ -21,5 +22,15 @@ Whois Server: whois.example.test
 
     expect(fields.registrar).toEqual(["Example Registrar LLC"]);
     expect(fields["whois server"]).toEqual(["whois.example.test"]);
+  });
+
+  test("extracts IANA whois referral field", () => {
+    const referral = extractReferralServer(`
+domain:       ME
+whois:        whois.nic.me
+status:       ACTIVE
+`);
+
+    expect(referral).toBe("whois.nic.me");
   });
 });

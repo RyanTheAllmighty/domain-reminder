@@ -51,8 +51,13 @@ function extractField(raw: string, labels: string[]): string | undefined {
   return undefined;
 }
 
-function extractReferralServer(raw: string): string | undefined {
-  return extractField(raw, ["refer", "whois server", "registrar whois server"]);
+export function extractReferralServer(raw: string): string | undefined {
+  return extractField(raw, [
+    "refer",
+    "whois",
+    "whois server",
+    "registrar whois server",
+  ]);
 }
 
 function extractRegistrar(raw: string): string | undefined {

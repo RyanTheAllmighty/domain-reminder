@@ -9,7 +9,21 @@ export function formatDomainStatusLine(
   now: Date,
 ): string {
   if (!isDomainLookupResult(result)) {
-    return `- <code>${escapeTelegramHtml(result.domain)}</code> - <b>ERROR</b> <code>${escapeTelegramHtml(result.error)}</code>`;
+    const label =
+      result.kind === "expiry-unavailable" ? "EXPIRY UNAVAILABLE" : "ERROR";
+    const parts = [
+      `- <code>${escapeTelegramHtml(result.domain)}</code>`,
+      `<b>${label}</b> <code>${escapeTelegramHtml(result.error)}</code>`,
+    ];
+
+    if (result.registrar) {
+      parts.push(`<b>Registrar:</b> ${escapeTelegramHtml(result.registrar)}`);
+    }
+    if (result.source) {
+      parts.push(`<b>Source:</b> <code>${result.source}</code>`);
+    }
+
+    return parts.join(" - ");
   }
 
   const daysRemaining = daysUntilDate(result.expiryDate, now);
@@ -32,6 +46,17 @@ export function formatStartupSummary(opts: {
   const lines: string[] = [];
   const okCount = opts.results.filter(isDomainLookupResult).length;
   const errorCount = opts.results.length - okCount;
+  const sortedResults = [...opts.results].sort((a, b) => {
+    const aTime = isDomainLookupResult(a)
+      ? a.expiryDate.getTime()
+      : Number.POSITIVE_INFINITY;
+    const bTime = isDomainLookupResult(b)
+      ? b.expiryDate.getTime()
+      : Number.POSITIVE_INFINITY;
+
+    if (aTime !== bTime) return aTime - bTime;
+    return a.domain.localeCompare(b.domain);
+  });
 
   lines.push("<b>Domain Reminder</b>");
   lines.push("<i>Started successfully</i>");
@@ -49,7 +74,9 @@ export function formatStartupSummary(opts: {
   );
   lines.push("");
   lines.push("<b>Current domain status</b>");
-  lines.push(...opts.results.map((result) => formatDomainStatusLine(result, opts.now)));
+  lines.push(
+    ...sortedResults.map((result) => formatDomainStatusLine(result, opts.now)),
+  );
 
   return lines.join("\n");
 }

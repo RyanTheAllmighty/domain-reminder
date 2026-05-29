@@ -10,6 +10,7 @@ export type CheckTime = {
 
 export type AppConfig = {
   domains: string[];
+  expiryOverrides: Record<string, Date>;
   checkTime: CheckTime;
   notifyThresholdDays: number[];
   dataDir: string;
@@ -69,6 +70,38 @@ export function parseThresholdDays(raw: string | undefined): number[] {
   return [...new Set(thresholds)].sort((a, b) => b - a);
 }
 
+export function parseExpiryOverrides(raw: string | undefined): Record<string, Date> {
+  if (!raw) return {};
+
+  const overrides: Record<string, Date> = {};
+
+  for (const entry of raw.split(",")) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+
+    const separator = trimmed.indexOf("=");
+    if (separator <= 0) {
+      throw new Error(
+        `Invalid DOMAIN_EXPIRY_OVERRIDES entry: ${trimmed}. Use domain=YYYY-MM-DD`,
+      );
+    }
+
+    const domain = normalizeDomain(trimmed.slice(0, separator));
+    const rawDate = trimmed.slice(separator + 1).trim();
+    const parsed = new Date(`${rawDate}T00:00:00Z`);
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate) || Number.isNaN(parsed.getTime())) {
+      throw new Error(
+        `Invalid DOMAIN_EXPIRY_OVERRIDES date for ${domain}: ${rawDate}. Use YYYY-MM-DD`,
+      );
+    }
+
+    overrides[domain] = parsed;
+  }
+
+  return overrides;
+}
+
 export function parseConfigFromEnv(env: NodeJS.ProcessEnv): AppConfig {
   const domains = [
     ...new Set(
@@ -90,6 +123,7 @@ export function parseConfigFromEnv(env: NodeJS.ProcessEnv): AppConfig {
 
   return {
     domains,
+    expiryOverrides: parseExpiryOverrides(optionalEnv(env, "DOMAIN_EXPIRY_OVERRIDES")),
     checkTime: parseCheckTime(optionalEnv(env, "CHECK_TIME")),
     notifyThresholdDays: parseThresholdDays(
       optionalEnv(env, "NOTIFY_THRESHOLDS_DAYS"),

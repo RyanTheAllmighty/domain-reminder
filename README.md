@@ -19,10 +19,13 @@ Optional:
 - `DATA_DIR` (default `/data`)
 - `LOG_LEVEL` (`debug|info|warn|error`, default `info`)
 - `TZ` (set by Docker/Unraid if you want a specific timezone, e.g. `Australia/Sydney`)
+- `DOMAIN_EXPIRY_OVERRIDES` (optional comma-separated `domain=YYYY-MM-DD` values for registries that do not publish expiry dates)
 
 ## How reminders work
 
 For each domain, the app looks up the expiry date and registrar using RDAP first, then falls back to WHOIS if RDAP cannot provide an expiry date.
+
+Some registries do not publish expiry dates in public RDAP/WHOIS. For example, auDA removes `.au` creation and expiry dates from public WHOIS/RDAP, and its password recovery page is CAPTCHA/email gated. For those domains, set `DOMAIN_EXPIRY_OVERRIDES`, e.g. `example.com.au=2027-06-28`.
 
 Thresholds are matched to the nearest configured threshold that still covers the domain. With the default `30,14,7` thresholds:
 
@@ -89,6 +92,7 @@ docker run --rm \
   -e TELEGRAM_CHAT_ID="123456789" \
   -e CHECK_TIME="00:00" \
   -e NOTIFY_THRESHOLDS_DAYS="30,14,7" \
+  -e DOMAIN_EXPIRY_OVERRIDES="example.com.au=2027-06-28" \
   -e TZ="Australia/Sydney" \
   -e DATA_DIR="/data" \
   -v domain-reminder-data:/data \

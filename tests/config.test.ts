@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseCheckTime, parseConfigFromEnv, parseThresholdDays } from "../src/utils/config";
+import {
+  parseCheckTime,
+  parseConfigFromEnv,
+  parseExpiryOverrides,
+  parseThresholdDays,
+} from "../src/utils/config";
 import { normalizeDomain } from "../src/utils/domain";
 
 describe("config parsing", () => {
@@ -12,6 +17,7 @@ describe("config parsing", () => {
     });
 
     expect(config.domains).toEqual(["example.com", "example.net"]);
+    expect(config.expiryOverrides).toEqual({});
     expect(config.checkTime.value).toBe("00:00");
     expect(config.notifyThresholdDays).toEqual([30, 14, 7]);
     expect(config.dataDir).toBe("/data");
@@ -42,5 +48,27 @@ describe("config parsing", () => {
       value: "07:05",
     });
     expect(() => parseCheckTime("24:00")).toThrow("CHECK_TIME");
+  });
+
+  test("parses explicit expiry overrides", () => {
+    const overrides = parseExpiryOverrides(
+      "Example.com.au=2027-06-28,example.net=2026-01-02",
+    );
+
+    expect(overrides["example.com.au"]?.toISOString()).toBe(
+      "2027-06-28T00:00:00.000Z",
+    );
+    expect(overrides["example.net"]?.toISOString()).toBe(
+      "2026-01-02T00:00:00.000Z",
+    );
+  });
+
+  test("rejects invalid expiry overrides", () => {
+    expect(() => parseExpiryOverrides("example.com.au:2027-06-28")).toThrow(
+      "DOMAIN_EXPIRY_OVERRIDES",
+    );
+    expect(() => parseExpiryOverrides("example.com.au=28/06/2027")).toThrow(
+      "YYYY-MM-DD",
+    );
   });
 });
